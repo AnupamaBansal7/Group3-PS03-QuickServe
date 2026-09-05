@@ -32,7 +32,6 @@ OrderCreationResult OrderService::createAndRouteOrder(int restaurantId, const st
         return result;
     }
 
-    // Validate every item ID against selected restaurant's menu
     for (int itemId : itemIds) {
         if (!restaurant->hasMenuItem(itemId)) {
             std::ostringstream oss;
@@ -43,7 +42,6 @@ OrderCreationResult OrderService::createAndRouteOrder(int restaurantId, const st
         }
     }
 
-    // All items valid: create order
     std::string orderId = idGenerator_->nextOrderId();
     auto arrivalTime = clock_->now();
 
@@ -57,10 +55,8 @@ OrderCreationResult OrderService::createAndRouteOrder(int restaurantId, const st
         order->addItem(orderItem);
     }
 
-    // Save order
     orderRepo_->save(order);
 
-    // Route order items
     result.routingResults = routingService_->routeOrder(order);
     result.order = order;
     result.success = true;
@@ -76,4 +72,4 @@ std::vector<std::shared_ptr<Order>> OrderService::getAllOrders() const {
     return orderRepo_->getAll();
 }
 
-} // namespace QuickServe
+}

@@ -9,106 +9,94 @@ KitchenStatusCLI::KitchenStatusCLI(std::shared_ptr<ReportService> reportService)
 void KitchenStatusCLI::display(std::ostream& out) {
     auto statusData = reportService_->getKitchenStatus();
 
-    out << "\n========================================\n";
-    out << "KITCHEN STATUS\n";
-    out << "==============\n\n";
-    out << "Facility: " << statusData.facilityName << "\n\n";
+    out << "\nKitchen Status (" << statusData.facilityName << ")\n";
+    out << "Current Time: " << statusData.currentTimeStr << "\n\n";
 
-    out << std::left << std::setw(16) << "Station Type"
-        << std::setw(8) << "FREE"
-        << std::setw(8) << "BUSY"
-        << std::setw(8) << "QUEUED"
+    out << "Station Availability:\n";
+    out << "  " << std::left << std::setw(16) << "Station Type"
+        << std::setw(8) << "Free"
+        << std::setw(8) << "Busy"
+        << std::setw(8) << "Queued"
         << "\n";
-    out << "----------------------------------------\n";
 
     for (const auto& ts : statusData.typeSummaries) {
-        out << std::left << std::setw(16) << stationTypeToString(ts.type)
+        out << "  " << std::left << std::setw(16) << stationTypeToString(ts.type)
             << std::setw(8) << ts.freeCount
             << std::setw(8) << ts.busyCount
             << std::setw(8) << ts.queuedCount
             << "\n";
     }
 
-    out << "\n";
-
-    // Individual Station Status
+    out << "\nPhysical Stations:\n";
     for (const auto& st : statusData.stationDetails) {
-        out << st.stationId << " | "
-            << std::left << std::setw(10) << stationTypeToString(st.type) << " | "
-            << stationStatusToString(st.status);
+        out << "  " << std::left << std::setw(8) << st.stationId
+            << std::setw(12) << stationTypeToString(st.type)
+            << std::setw(8) << stationStatusToString(st.status);
 
         if (st.status == StationStatus::BUSY && !st.currentOrderId.empty()) {
-            out << " | " << st.currentOrderId;
+            out << "  " << st.currentOrderId;
             if (!st.currentItemName.empty()) {
                 out << " (" << st.currentItemName << ")";
             }
             if (st.plannedMinutes > 0.0) {
-                out << " [Prep: " << std::fixed << std::setprecision(1) << st.elapsedMinutes
+                out << " [" << std::fixed << std::setprecision(1) << st.elapsedMinutes
                     << "/" << st.plannedMinutes << " min]";
             }
         }
         out << "\n";
     }
 
-    // Queued Items Section
-    out << "\n========================================\n";
-    out << "QUEUED ITEMS (Waiting for Station)\n";
-    out << "==================================\n";
+    out << "\nQueued Items:\n";
     if (statusData.queuedItems.empty()) {
-        out << "No items currently in queue.\n";
+        out << "  No items currently in queue.\n";
     } else {
-        out << std::left << std::setw(12) << "Order ID"
-            << std::setw(20) << "Item Name"
-            << std::setw(14) << "Station Type"
+        out << "  " << std::left << std::setw(12) << "Order"
+            << std::setw(22) << "Item"
+            << std::setw(14) << "Station"
             << std::setw(12) << "Target SLA"
             << std::setw(12) << "Wait Time"
-            << std::setw(12) << "Priority"
+            << std::setw(14) << "Priority"
             << "\n";
-        out << "--------------------------------------------------------------------------------\n";
         for (const auto& q : statusData.queuedItems) {
             std::ostringstream slaOss, waitOss;
             slaOss << q.targetSlaMinutes << " min";
             waitOss << std::fixed << std::setprecision(1) << q.waitMinutes << " min";
-            out << std::left << std::setw(12) << q.orderId
-                << std::setw(20) << q.itemName
+            out << "  " << std::left << std::setw(12) << q.orderId
+                << std::setw(22) << q.itemName
                 << std::setw(14) << stationTypeToString(q.stationType)
                 << std::setw(12) << slaOss.str()
                 << std::setw(12) << waitOss.str()
-                << std::setw(12) << (q.isBreaching ? "SLA BREACH (HIGH)" : "NORMAL")
+                << std::setw(14) << (q.isBreaching ? "SLA Breached" : "Normal")
                 << "\n";
         }
     }
 
-    // Completed Items Section
-    out << "\n========================================\n";
-    out << "COMPLETED ORDERS & ITEMS\n";
-    out << "========================\n";
+    out << "\nCompleted Items:\n";
     if (statusData.completedItems.empty()) {
-        out << "No items completed yet.\n";
+        out << "  No items completed yet.\n";
     } else {
-        out << std::left << std::setw(12) << "Order ID"
-            << std::setw(20) << "Item Name"
+        out << "  " << std::left << std::setw(12) << "Order"
+            << std::setw(22) << "Item"
             << std::setw(10) << "Station"
             << std::setw(14) << "Completed At"
             << std::setw(12) << "Prep Time"
             << std::setw(12) << "Target SLA"
-            << std::setw(12) << "SLA Status"
+            << std::setw(14) << "SLA Status"
             << "\n";
-        out << "--------------------------------------------------------------------------------------------\n";
         for (const auto& c : statusData.completedItems) {
             std::ostringstream prepOss, slaOss;
             prepOss << std::fixed << std::setprecision(1) << c.actualPrepMinutes << " min";
             slaOss << c.targetSlaMinutes << " min";
-            out << std::left << std::setw(12) << c.orderId
-                << std::setw(20) << c.itemName
+            out << "  " << std::left << std::setw(12) << c.orderId
+                << std::setw(22) << c.itemName
                 << std::setw(10) << c.stationId
                 << std::setw(14) << c.completionTimeStr
                 << std::setw(12) << prepOss.str()
                 << std::setw(12) << slaOss.str()
-                << std::setw(12) << slaStatusToString(c.slaStatus)
+                << std::setw(14) << slaStatusToString(c.slaStatus)
                 << "\n";
         }
     }
 }
 
-} // namespace QuickServe
+}

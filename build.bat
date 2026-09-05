@@ -1,7 +1,5 @@
 @echo off
-echo ===================================================
-echo Building QuickServe Foods Refactored Application...
-echo ===================================================
+echo Building QuickServe...
 
 set CXX=g++
 set CXXFLAGS=-std=c++14 -O2 -Wall -Wextra -Iinclude -Itests -I.
@@ -38,7 +36,7 @@ set CXXFLAGS=-std=c++14 -O2 -Wall -Wextra -Iinclude -Itests -I.
   -o quickserve.exe
 
 if %ERRORLEVEL% EQU 0 (
-    echo [SUCCESS] quickserve.exe built successfully!
+    echo Build successful.
 ) else (
-    echo [FAILURE] Build failed with error code %ERRORLEVEL%
+    echo Build failed with error code %ERRORLEVEL%.
 )

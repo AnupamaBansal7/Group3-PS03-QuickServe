@@ -15,9 +15,7 @@ MainMenu::MainMenu(std::shared_ptr<OrderCLI> orderCli,
       clock_(clock) {}
 
 void MainMenu::displayMenu(std::ostream& out) const {
-    out << "\n========================================\n";
-    out << "QUICKSERVE KITCHEN SYSTEM\n";
-    out << "=========================\n\n";
+    out << "\nQuickServe Kitchen System\n\n";
     out << "1. Place Order\n";
     out << "2. View Kitchen Status\n";
     out << "3. Complete Item / Advance Time\n";
@@ -48,7 +46,7 @@ void MainMenu::run(std::istream& in, std::ostream& out) {
                 break;
             case 5:
                 running = false;
-                out << "\nExiting QuickServe Kitchen System. Goodbye!\n";
+                out << "\nExiting QuickServe Kitchen System.\n";
                 break;
             default:
                 out << "Invalid choice. Please select from the menu.\n";
@@ -57,4 +55,4 @@ void MainMenu::run(std::istream& in, std::ostream& out) {
     }
 }
 
-} // namespace QuickServe
+}

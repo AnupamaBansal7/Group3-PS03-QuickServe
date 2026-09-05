@@ -18,7 +18,6 @@ OrderItem::OrderItem(const std::string& orderItemId,
       slaMinutes_(menuItem.getSlaMinutes()),
       status_(OrderItemStatus::QUEUED),
       slaStatus_(SlaStatus::PENDING) {
-    // Realistic kitchen prep variance: ~30% of items experience slight kitchen delay & breach SLA
     static const double varianceMultipliers[] = {0.88, 1.15, 0.92, 1.20, 0.85, 1.12, 0.96, 1.24};
     static size_t varianceIdx = 0;
     double factor = varianceMultipliers[varianceIdx % 8];

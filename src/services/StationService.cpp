@@ -77,30 +77,24 @@ CompletionResult StationService::completeStationItem(const std::string& stationI
         ? (item->getStartTime() + std::chrono::milliseconds(static_cast<long long>(simulatedPrepMinutes * 60000.0)))
         : clock_->now();
 
-    // 1. Record completion time & set status to COMPLETED
     item->setCompletionTime(completionTime);
     item->setStatus(OrderItemStatus::COMPLETED);
 
-    // 2. Record actual prep time
     double actualPrep = (simulatedPrepMinutes >= 0.0)
         ? simulatedPrepMinutes
         : slaService_->calculateActualPrepMinutes(item->getStartTime(), completionTime);
     item->setActualPrepMinutes(actualPrep);
 
-    // 3. Flag whether the item breached its SLA
     SlaStatus sla = slaService_->evaluatePrepSla(actualPrep, item->getSlaMinutes());
     item->setSlaStatus(sla);
 
-    // 4. Update station busy minutes & SLA breach counter
     station->addBusyMinutes(actualPrep);
     if (sla == SlaStatus::BREACHED) {
         station->incrementSlaBreachCount();
     }
 
-    // 5. Free the station
     station->releaseOrderItem();
 
-    // 6. Check queue for that station type and automatically assign if an item is waiting
     auto nextQueued = queueService_->getNextItem(station->getStationType());
     if (nextQueued) {
         station->assignOrderItem(nextQueued, completionTime);
@@ -136,7 +130,7 @@ std::vector<CompletionResult> StationService::updateCookingProgress(std::chrono:
                     if (res.success) {
                         completed.push_back(res);
                         changed = true;
-                        break; // Queue may have assigned a new item to this station; restart loop
+                        break;
                     }
                 }
             }
@@ -145,4 +139,4 @@ std::vector<CompletionResult> StationService::updateCookingProgress(std::chrono:
     return completed;
 }
 
-} // namespace QuickServe
+}

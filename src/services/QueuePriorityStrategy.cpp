@@ -11,7 +11,6 @@ std::shared_ptr<OrderItem> PeakHourSlaPriorityStrategy::selectNextItem(
         return nullptr;
     }
 
-    // 1. Check for first SLA-breaching item in arrival order
     for (auto it = queue.begin(); it != queue.end(); ++it) {
         if (slaService.isQueuedItemBreached(**it, currentTime)) {
             auto selected = *it;
@@ -20,7 +19,6 @@ std::shared_ptr<OrderItem> PeakHourSlaPriorityStrategy::selectNextItem(
         }
     }
 
-    // 2. Otherwise, pop normal item in FIFO arrival order
     auto selected = queue.front();
     queue.pop_front();
     return selected;
@@ -28,8 +26,8 @@ std::shared_ptr<OrderItem> PeakHourSlaPriorityStrategy::selectNextItem(
 
 std::shared_ptr<OrderItem> FifoPriorityStrategy::selectNextItem(
     std::deque<std::shared_ptr<OrderItem>>& queue,
-    std::chrono::system_clock::time_point /*currentTime*/,
-    const SlaService& /*slaService*/) {
+    std::chrono::system_clock::time_point,
+    const SlaService&) {
     if (queue.empty()) {
         return nullptr;
     }
@@ -38,4 +36,4 @@ std::shared_ptr<OrderItem> FifoPriorityStrategy::selectNextItem(
     return selected;
 }
 
-} // namespace QuickServe
+}

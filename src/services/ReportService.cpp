@@ -86,7 +86,6 @@ KitchenStatusData ReportService::getKitchenStatus() const {
         data.stationDetails.push_back(item);
     }
 
-    // Queued items
     for (const auto& itm : orderRepo_->getQueuedItems()) {
         QueuedItemInfo q;
         q.orderId = itm->getOrderId();
@@ -98,7 +97,6 @@ KitchenStatusData ReportService::getKitchenStatus() const {
         data.queuedItems.push_back(q);
     }
 
-    // Completed items
     for (const auto& itm : orderRepo_->getCompletedItems()) {
         CompletedItemInfo c;
         c.orderId = itm->getOrderId();
@@ -161,7 +159,6 @@ ShiftReportData ReportService::getShiftReport(double shiftDurationMinutes) const
         report.stationTypeReports.push_back(item);
     }
 
-    // Individual station utilization & SLA breach statistics
     for (const auto& st : fac->getAllStations()) {
         StationReportItem stItem;
         stItem.stationId = st->getStationId();
@@ -172,7 +169,6 @@ ShiftReportData ReportService::getShiftReport(double shiftDurationMinutes) const
         report.individualStationReports.push_back(stItem);
     }
 
-    // Totals across all orders
     auto orders = orderRepo_->getAll();
     report.totalOrders = static_cast<int>(orders.size());
     report.totalItems = 0;

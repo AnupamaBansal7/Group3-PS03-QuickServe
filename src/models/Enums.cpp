@@ -26,28 +26,28 @@ StationType stringToStationType(const std::string& str) {
 
 std::string stationStatusToString(StationStatus status) {
     switch (status) {
-        case StationStatus::FREE: return "FREE";
-        case StationStatus::BUSY: return "BUSY";
+        case StationStatus::FREE: return "Free";
+        case StationStatus::BUSY: return "Busy";
     }
-    return "UNKNOWN";
+    return "Unknown";
 }
 
 std::string orderItemStatusToString(OrderItemStatus status) {
     switch (status) {
-        case OrderItemStatus::QUEUED:    return "QUEUED";
-        case OrderItemStatus::PREPARING: return "PREPARING";
-        case OrderItemStatus::COMPLETED: return "COMPLETED";
+        case OrderItemStatus::QUEUED:    return "Queued";
+        case OrderItemStatus::PREPARING: return "Preparing";
+        case OrderItemStatus::COMPLETED: return "Completed";
     }
-    return "UNKNOWN";
+    return "Unknown";
 }
 
 std::string slaStatusToString(SlaStatus status) {
     switch (status) {
-        case SlaStatus::PENDING:    return "PENDING";
-        case SlaStatus::WITHIN_SLA: return "WITHIN SLA";
-        case SlaStatus::BREACHED:   return "BREACHED";
+        case SlaStatus::PENDING:    return "Pending";
+        case SlaStatus::WITHIN_SLA: return "Within SLA";
+        case SlaStatus::BREACHED:   return "Breached";
     }
-    return "UNKNOWN";
+    return "Unknown";
 }
 
-} // namespace QuickServe
+}

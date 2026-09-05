@@ -17,10 +17,8 @@
 namespace QuickServe {
 
 bool TestSuite::runAllTests(std::ostream& out) {
-    out << "\n======================================================================\n";
-    out << "            QUICKSERVE FOODS - INDEPENDENT SERVICE TEST SUITE         \n";
-    out << "  Verifying Domain Services, Queue Logic, SLAs & Architecture Layering\n";
-    out << "======================================================================\n\n";
+    out << "\nQuickServe Test Suite\n\n";
+    out << "Running tests:\n";
 
     bool allPassed = true;
 
@@ -34,19 +32,18 @@ bool TestSuite::runAllTests(std::ostream& out) {
     allPassed &= testUtilizationCalculation(out);
     allPassed &= testMultiFacilitySupport(out);
 
-    out << "\n======================================================================\n";
+    out << "\n";
     if (allPassed) {
-        out << "        >>> ALL INDEPENDENT SERVICE TESTS PASSED! (9/9) <<<\n";
+        out << "All 9 tests passed.\n\n";
     } else {
-        out << "        >>> SOME SERVICE TESTS FAILED! <<<\n";
+        out << "Some tests failed.\n\n";
     }
-    out << "======================================================================\n\n";
 
     return allPassed;
 }
 
 bool TestSuite::testOrderValidation(std::ostream& out) {
-    out << "[TEST 1] Order Validation & Rejection Logic... ";
+    out << "  Test 1: Order validation and rejection logic ... ";
 
     auto facilityRepo = std::make_shared<FacilityRepository>();
     auto restRepo = std::make_shared<RestaurantRepository>();
@@ -61,29 +58,26 @@ bool TestSuite::testOrderValidation(std::ostream& out) {
     auto idGen = std::make_shared<IdGenerator>();
     auto orderService = std::make_shared<OrderService>(restRepo, orderRepo, routingService, clock, idGen);
 
-    // 1. Valid items for Spice Route (101, 103, 104)
     auto resValid = orderService->createAndRouteOrder(1, {101, 103, 104});
     assert(resValid.success == true);
     assert(resValid.order != nullptr);
     assert(resValid.order->getOrderItems().size() == 3);
 
-    // 2. Invalid item ID 999
     auto resInvalid = orderService->createAndRouteOrder(1, {101, 999});
     assert(resInvalid.success == false);
     assert(resInvalid.order == nullptr);
     assert(resInvalid.errorMessage.find("999") != std::string::npos);
 
-    // 3. Unknown restaurant ID 99
     auto resUnknownRest = orderService->createAndRouteOrder(99, {101});
     assert(resUnknownRest.success == false);
     assert(resUnknownRest.order == nullptr);
 
-    out << "PASSED\n";
+    out << "passed\n";
     return true;
 }
 
 bool TestSuite::testStationAssignmentAndRouting(std::ostream& out) {
-    out << "[TEST 2] Station Type Routing & Equipment Specialization... ";
+    out << "  Test 2: Station routing and equipment specialization ... ";
 
     auto facilityRepo = std::make_shared<FacilityRepository>();
     auto restRepo = std::make_shared<RestaurantRepository>();
@@ -98,32 +92,28 @@ bool TestSuite::testStationAssignmentAndRouting(std::ostream& out) {
     auto idGen = std::make_shared<IdGenerator>();
     auto orderService = std::make_shared<OrderService>(restRepo, orderRepo, routingService, clock, idGen);
 
-    // Order with TANDOOR (101), FRYER (103), and COLD_PREP (104)
     auto res = orderService->createAndRouteOrder(1, {101, 103, 104});
     assert(res.success);
     assert(res.routingResults.size() == 3);
 
-    // 101 -> T1 [TANDOOR]
     assert(res.routingResults[0].assignedToStation == true);
     assert(res.routingResults[0].assignedStationId == "T1");
     assert(res.routingResults[0].requiredStationType == StationType::TANDOOR);
 
-    // 103 -> F1 [FRYER]
     assert(res.routingResults[1].assignedToStation == true);
     assert(res.routingResults[1].assignedStationId == "F1");
     assert(res.routingResults[1].requiredStationType == StationType::FRYER);
 
-    // 104 -> C1 [COLD_PREP]
     assert(res.routingResults[2].assignedToStation == true);
     assert(res.routingResults[2].assignedStationId == "C1");
     assert(res.routingResults[2].requiredStationType == StationType::COLD_PREP);
 
-    out << "PASSED\n";
+    out << "passed\n";
     return true;
 }
 
 bool TestSuite::testQueueingWhenBusy(std::ostream& out) {
-    out << "[TEST 3] Busy Station Queueing (No Dropped Items)... ";
+    out << "  Test 3: Busy station queueing ... ";
 
     auto facilityRepo = std::make_shared<FacilityRepository>();
     auto restRepo = std::make_shared<RestaurantRepository>();
@@ -138,24 +128,21 @@ bool TestSuite::testQueueingWhenBusy(std::ostream& out) {
     auto idGen = std::make_shared<IdGenerator>();
     auto orderService = std::make_shared<OrderService>(restRepo, orderRepo, routingService, clock, idGen);
 
-    // Central Kitchen has 2 Tandoors: T1, T2
-    // Order 1 takes T1 (101) and T2 (102)
     auto ord1 = orderService->createAndRouteOrder(1, {101, 102});
     assert(ord1.routingResults[0].assignedStationId == "T1");
     assert(ord1.routingResults[1].assignedStationId == "T2");
 
-    // Order 2 requests another Tandoor item (101)
     auto ord2 = orderService->createAndRouteOrder(1, {101});
-    assert(ord2.routingResults[0].assignedToStation == false); // Queued!
+    assert(ord2.routingResults[0].assignedToStation == false);
     assert(ord2.routingResults[0].item->getStatus() == OrderItemStatus::QUEUED);
     assert(queueService->getQueueSize(StationType::TANDOOR) == 1);
 
-    out << "PASSED\n";
+    out << "passed\n";
     return true;
 }
 
 bool TestSuite::testFifoQueueBehavior(std::ostream& out) {
-    out << "[TEST 4] Standard Arrival Order FIFO Queueing... ";
+    out << "  Test 4: FIFO queue arrival order ... ";
 
     auto clock = std::make_shared<ControllableClock>();
     auto slaService = std::make_shared<SlaService>(clock);
@@ -176,7 +163,6 @@ bool TestSuite::testFifoQueueBehavior(std::ostream& out) {
 
     assert(queueService->getQueueSize(StationType::GRILL) == 2);
 
-    // Neither is breaching, pop must return Item A first, then Item B
     auto popped1 = queueService->getNextItem(StationType::GRILL);
     assert(popped1->getOrderItemId() == "ITM-1");
 
@@ -185,51 +171,45 @@ bool TestSuite::testFifoQueueBehavior(std::ostream& out) {
 
     assert(queueService->getQueueSize(StationType::GRILL) == 0);
 
-    out << "PASSED\n";
+    out << "passed\n";
     return true;
 }
 
 bool TestSuite::testSlaPriorityInQueue(std::ostream& out) {
-    out << "[TEST 5] SLA-Breaching Queued Item Priority Escalation... ";
+    out << "  Test 5: Priority queue escalation for SLA breach ... ";
 
     auto clock = std::make_shared<ControllableClock>();
     auto slaService = std::make_shared<SlaService>(clock);
     auto queueService = std::make_shared<QueueService>(clock, slaService);
 
-    // Item A has target SLA 15 min, arrives at T0
     MenuItem miA(101, "Slow Dish", StationType::GRILL, 15);
     auto t0 = clock->now();
     auto itemA = std::make_shared<OrderItem>("ITM-A", "ORD-A", miA, t0);
     queueService->enqueue(itemA);
 
-    // Item B has target SLA 4 min, arrives at T0 + 2m
     clock->advanceMinutes(2.0);
     MenuItem miB(102, "Quick Slider", StationType::GRILL, 4);
     auto t1 = clock->now();
     auto itemB = std::make_shared<OrderItem>("ITM-B", "ORD-B", miB, t1);
     queueService->enqueue(itemB);
 
-    // Advance clock to T0 + 7.0m:
-    // Item A waited 7m (SLA: 15m) -> NOT breached
-    // Item B waited 5m (SLA: 4m)  -> BREACHED in queue!
     clock->advanceMinutes(5.0);
 
-    // Verify queueService detects Item B breach and elevates it ahead of Item A!
     assert(slaService->isQueuedItemBreached(*itemA, clock->now()) == false);
     assert(slaService->isQueuedItemBreached(*itemB, clock->now()) == true);
 
     auto firstDispatched = queueService->getNextItem(StationType::GRILL);
-    assert(firstDispatched->getOrderItemId() == "ITM-B"); // Item B jumped ahead!
+    assert(firstDispatched->getOrderItemId() == "ITM-B");
 
     auto secondDispatched = queueService->getNextItem(StationType::GRILL);
-    assert(secondDispatched->getOrderItemId() == "ITM-A"); // Item A dispatched second
+    assert(secondDispatched->getOrderItemId() == "ITM-A");
 
-    out << "PASSED\n";
+    out << "passed\n";
     return true;
 }
 
 bool TestSuite::testItemCompletionAndAutoAssignment(std::ostream& out) {
-    out << "[TEST 6] Station Completion & Automatic Queued Assignment... ";
+    out << "  Test 6: Station completion and automatic assignment ... ";
 
     auto facilityRepo = std::make_shared<FacilityRepository>();
     auto restRepo = std::make_shared<RestaurantRepository>();
@@ -244,34 +224,29 @@ bool TestSuite::testItemCompletionAndAutoAssignment(std::ostream& out) {
     auto idGen = std::make_shared<IdGenerator>();
     auto orderService = std::make_shared<OrderService>(restRepo, orderRepo, routingService, clock, idGen);
 
-    // Fill both Tandoors T1 and T2
     orderService->createAndRouteOrder(1, {101, 102});
 
-    // Queue item 101 into Tandoor queue
     orderService->createAndRouteOrder(1, {101});
     assert(queueService->getQueueSize(StationType::TANDOOR) == 1);
 
-    // Advance clock by 10 minutes
     clock->advanceMinutes(10.0);
 
-    // Complete T1
     auto compRes = stationService->completeStationItem("T1");
     assert(compRes.success == true);
     assert(compRes.completedItem != nullptr);
     assert(compRes.actualPrepMinutes == 10.0);
     assert(compRes.slaStatus == SlaStatus::WITHIN_SLA);
 
-    // T1 should have automatically pulled the queued item!
     assert(compRes.nextAssignedItem != nullptr);
     assert(queueService->getQueueSize(StationType::TANDOOR) == 0);
     assert(stationService->findStation("T1")->isBusy() == true);
 
-    out << "PASSED\n";
+    out << "passed\n";
     return true;
 }
 
 bool TestSuite::testSlaBreachDetection(std::ostream& out) {
-    out << "[TEST 7] Actual Preparation SLA Breach Evaluation... ";
+    out << "  Test 7: SLA breach evaluation ... ";
 
     auto facilityRepo = std::make_shared<FacilityRepository>();
     auto restRepo = std::make_shared<RestaurantRepository>();
@@ -286,12 +261,10 @@ bool TestSuite::testSlaBreachDetection(std::ostream& out) {
     auto idGen = std::make_shared<IdGenerator>();
     auto orderService = std::make_shared<OrderService>(restRepo, orderRepo, routingService, clock, idGen);
 
-    // Item 103 (French Fries, FRYER, SLA: 8 min)
-    orderService->createAndRouteOrder(1, {103}); // Starts on F1
+    orderService->createAndRouteOrder(1, {103});
     auto f1 = stationService->findStation("F1");
     assert(f1->getSlaBreachCount() == 0);
 
-    // Cook for 12 minutes (exceeds 8 min SLA)
     clock->advanceMinutes(12.0);
 
     auto compRes = stationService->completeStationItem("F1");
@@ -305,12 +278,12 @@ bool TestSuite::testSlaBreachDetection(std::ostream& out) {
     assert(compRes.completedItem->getActualPrepMinutes() == 12.0);
     assert(f1->getSlaBreachCount() == 1);
 
-    out << "PASSED\n";
+    out << "passed\n";
     return true;
 }
 
 bool TestSuite::testUtilizationCalculation(std::ostream& out) {
-    out << "[TEST 8] Shift Utilization Calculation & Active Time Inclusion... ";
+    out << "  Test 8: Shift utilization calculation ... ";
 
     auto facilityRepo = std::make_shared<FacilityRepository>();
     auto restRepo = std::make_shared<RestaurantRepository>();
@@ -326,21 +299,19 @@ bool TestSuite::testUtilizationCalculation(std::ostream& out) {
     auto orderService = std::make_shared<OrderService>(restRepo, orderRepo, routingService, clock, idGen);
     auto reportService = std::make_shared<ReportService>(facilityRepo, orderRepo, queueService, clock, 60.0);
 
-    // Item 201 on G1 (GRILL)
     orderService->createAndRouteOrder(2, {201});
     clock->advanceMinutes(30.0);
 
-    // G1 has been cooking for 30 minutes out of a 60 min shift -> 50% utilization
     auto g1 = stationService->findStation("G1");
     double util = g1->getUtilization(60.0, clock->now());
     assert(util == 50.0);
 
-    out << "PASSED\n";
+    out << "passed\n";
     return true;
 }
 
 bool TestSuite::testMultiFacilitySupport(std::ostream& out) {
-    out << "[TEST 9] Multiple Facilities Support & Isolation... ";
+    out << "  Test 9: Multiple facilities isolation ... ";
 
     auto facilityRepo = std::make_shared<FacilityRepository>();
     auto restRepo = std::make_shared<RestaurantRepository>();
@@ -356,8 +327,8 @@ bool TestSuite::testMultiFacilitySupport(std::ostream& out) {
     assert(fac1->getAllStations().size() == 8);
     assert(fac2->getAllStations().size() == 3);
 
-    out << "PASSED\n";
+    out << "passed\n";
     return true;
 }
 
-} // namespace QuickServe
+}
