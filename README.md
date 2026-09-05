@@ -29,6 +29,7 @@ QuickServe/
 │   │   └── OrderRepository.h      # In-memory storage & query for orders
 │   ├── services/
 │   │   ├── IClock.h            # Clock abstraction (SystemClock & ControllableClock)
+│   │   ├── IQueuePriorityStrategy.h # Strategy pattern for queue dispatch priority
 │   │   ├── SlaService.h        # SLA target comparisons, prep duration, queue breach checks
 │   │   ├── QueueService.h      # Dedicated station-type queues with SLA priority rule
 │   │   ├── StationService.h    # Station state, free/busy transitions, utilization metrics
