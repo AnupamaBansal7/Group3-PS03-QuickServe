@@ -16,6 +16,10 @@ public:
     std::vector<std::shared_ptr<Order>> getAll() const;
     size_t count() const;
 
+    std::vector<std::shared_ptr<OrderItem>> getCompletedItems() const;
+    std::vector<std::shared_ptr<OrderItem>> getQueuedItems() const;
+    std::vector<std::shared_ptr<OrderItem>> getPreparingItems() const;
+
 private:
     std::map<std::string, std::shared_ptr<Order>> orders_;
     std::vector<std::shared_ptr<Order>> orderList_;

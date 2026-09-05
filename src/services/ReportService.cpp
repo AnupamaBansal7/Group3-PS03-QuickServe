@@ -1,4 +1,6 @@
 #include "services/ReportService.h"
+#include "services/StationService.h"
+#include "utils/TimeUtils.h"
 #include <algorithm>
 
 namespace QuickServe {
@@ -12,10 +14,35 @@ ReportService::ReportService(std::shared_ptr<FacilityRepository> facilityRepo,
       orderRepo_(orderRepo),
       queueService_(queueService),
       clock_(clock),
+      stationService_(nullptr),
       shiftDurationMinutes_(defaultShiftMinutes > 0 ? defaultShiftMinutes : 60.0) {}
 
+ReportService::ReportService(std::shared_ptr<FacilityRepository> facilityRepo,
+                             std::shared_ptr<OrderRepository> orderRepo,
+                             std::shared_ptr<QueueService> queueService,
+                             std::shared_ptr<IClock> clock,
+                             std::shared_ptr<StationService> stationService,
+                             double defaultShiftMinutes)
+    : facilityRepo_(facilityRepo),
+      orderRepo_(orderRepo),
+      queueService_(queueService),
+      clock_(clock),
+      stationService_(stationService),
+      shiftDurationMinutes_(defaultShiftMinutes > 0 ? defaultShiftMinutes : 60.0) {}
+
+void ReportService::setStationService(std::shared_ptr<StationService> stationService) {
+    stationService_ = stationService;
+}
+
 KitchenStatusData ReportService::getKitchenStatus() const {
+    auto now = clock_->now();
+    if (stationService_) {
+        stationService_->updateCookingProgress(now);
+    }
+
     KitchenStatusData data;
+    data.currentTimeStr = TimeUtils::formatTimePoint(now);
+
     auto fac = facilityRepo_->getActiveFacility();
     if (!fac) {
         data.facilityName = "No Active Facility";
@@ -44,14 +71,45 @@ KitchenStatusData ReportService::getKitchenStatus() const {
         item.stationId = st->getStationId();
         item.type = st->getStationType();
         item.status = st->getStatus();
+        item.elapsedMinutes = 0.0;
+        item.plannedMinutes = 0.0;
         if (st->isBusy() && st->getCurrentOrderItem()) {
-            item.currentOrderId = st->getCurrentOrderItem()->getOrderId();
-            item.currentItemName = st->getCurrentOrderItem()->getMenuItem().getName();
+            auto oi = st->getCurrentOrderItem();
+            item.currentOrderId = oi->getOrderId();
+            item.currentItemName = oi->getMenuItem().getName();
+            item.elapsedMinutes = TimeUtils::durationMinutes(st->getBusyStartTime(), now);
+            item.plannedMinutes = oi->getPlannedPrepMinutes();
         } else {
             item.currentOrderId = "";
             item.currentItemName = "";
         }
         data.stationDetails.push_back(item);
+    }
+
+    // Queued items
+    for (const auto& itm : orderRepo_->getQueuedItems()) {
+        QueuedItemInfo q;
+        q.orderId = itm->getOrderId();
+        q.itemName = itm->getMenuItem().getName();
+        q.stationType = itm->getMenuItem().getStationType();
+        q.targetSlaMinutes = itm->getSlaMinutes();
+        q.waitMinutes = TimeUtils::durationMinutes(itm->getArrivalTime(), now);
+        q.isBreaching = queueService_->isItemBreaching(*itm);
+        data.queuedItems.push_back(q);
+    }
+
+    // Completed items
+    for (const auto& itm : orderRepo_->getCompletedItems()) {
+        CompletedItemInfo c;
+        c.orderId = itm->getOrderId();
+        c.itemName = itm->getMenuItem().getName();
+        c.stationId = itm->getAssignedStationId();
+        c.stationType = itm->getMenuItem().getStationType();
+        c.completionTimeStr = TimeUtils::formatTimePoint(itm->getCompletionTime());
+        c.actualPrepMinutes = itm->getActualPrepMinutes();
+        c.targetSlaMinutes = itm->getSlaMinutes();
+        c.slaStatus = itm->getSlaStatus();
+        data.completedItems.push_back(c);
     }
 
     return data;

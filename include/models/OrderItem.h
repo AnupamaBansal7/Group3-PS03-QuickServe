@@ -40,6 +40,9 @@ public:
     SlaStatus getSlaStatus() const;
     void setSlaStatus(SlaStatus status);
 
+    double getPlannedPrepMinutes() const;
+    void setPlannedPrepMinutes(double minutes);
+
     bool isSlaBreached() const { return slaStatus_ == SlaStatus::BREACHED; }
     bool hasBreachedSla() const { return slaStatus_ == SlaStatus::BREACHED; }
 
@@ -51,6 +54,7 @@ private:
     std::chrono::system_clock::time_point startTime_;
     std::chrono::system_clock::time_point completionTime_;
     std::string assignedStationId_;
+    double plannedPrepMinutes_;
     double actualPrepMinutes_;
     int slaMinutes_;
     OrderItemStatus status_;

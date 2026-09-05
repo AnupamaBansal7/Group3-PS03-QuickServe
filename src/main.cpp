@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     }
 
     // 1. Clock Abstraction
-    auto clock = std::make_shared<QuickServe::SystemClock>();
+    auto clock = std::make_shared<QuickServe::ControllableClock>();
 
     // 2. Repositories
     auto facilityRepo = std::make_shared<QuickServe::FacilityRepository>();
@@ -56,12 +56,12 @@ int main(int argc, char* argv[]) {
     auto stationService = std::make_shared<QuickServe::StationService>(facilityRepo, clock, slaService, queueService);
     auto routingService = std::make_shared<QuickServe::OrderRoutingService>(stationService, queueService, clock);
     auto orderService = std::make_shared<QuickServe::OrderService>(restaurantRepo, orderRepo, routingService, clock, idGenerator);
-    auto reportService = std::make_shared<QuickServe::ReportService>(facilityRepo, orderRepo, queueService, clock, 60.0);
+    auto reportService = std::make_shared<QuickServe::ReportService>(facilityRepo, orderRepo, queueService, clock, stationService, 60.0);
 
     // 6. CLI Presentation Layer
     auto orderCli = std::make_shared<QuickServe::OrderCLI>(orderService, restaurantRepo);
     auto kitchenStatusCli = std::make_shared<QuickServe::KitchenStatusCLI>(reportService);
-    auto completionCli = std::make_shared<QuickServe::CompletionCLI>(stationService);
+    auto completionCli = std::make_shared<QuickServe::CompletionCLI>(stationService, clock);
     auto reportCli = std::make_shared<QuickServe::ReportCLI>(reportService);
 
     // 7. Start Main CLI Loop

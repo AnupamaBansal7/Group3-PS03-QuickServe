@@ -20,7 +20,7 @@ void MainMenu::displayMenu(std::ostream& out) const {
     out << "=========================\n\n";
     out << "1. Place Order\n";
     out << "2. View Kitchen Status\n";
-    out << "3. Complete Item\n";
+    out << "3. Complete Item / Advance Time\n";
     out << "4. Show Shift Report\n";
     out << "5. Exit\n\n";
 }
@@ -33,9 +33,11 @@ void MainMenu::run(std::istream& in, std::ostream& out) {
 
         switch (choice) {
             case 1:
+                if (clock_) clock_->advanceMinutes(2.0);
                 orderCli_->display(in, out);
                 break;
             case 2:
+                if (clock_) clock_->advanceMinutes(3.0);
                 kitchenStatusCli_->display(out);
                 break;
             case 3:

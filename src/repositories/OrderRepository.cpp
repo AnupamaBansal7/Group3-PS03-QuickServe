@@ -27,4 +27,40 @@ size_t OrderRepository::count() const {
     return orderList_.size();
 }
 
+std::vector<std::shared_ptr<OrderItem>> OrderRepository::getCompletedItems() const {
+    std::vector<std::shared_ptr<OrderItem>> list;
+    for (const auto& ord : orderList_) {
+        for (const auto& itm : ord->getOrderItems()) {
+            if (itm->getStatus() == OrderItemStatus::COMPLETED) {
+                list.push_back(itm);
+            }
+        }
+    }
+    return list;
+}
+
+std::vector<std::shared_ptr<OrderItem>> OrderRepository::getQueuedItems() const {
+    std::vector<std::shared_ptr<OrderItem>> list;
+    for (const auto& ord : orderList_) {
+        for (const auto& itm : ord->getOrderItems()) {
+            if (itm->getStatus() == OrderItemStatus::QUEUED) {
+                list.push_back(itm);
+            }
+        }
+    }
+    return list;
+}
+
+std::vector<std::shared_ptr<OrderItem>> OrderRepository::getPreparingItems() const {
+    std::vector<std::shared_ptr<OrderItem>> list;
+    for (const auto& ord : orderList_) {
+        for (const auto& itm : ord->getOrderItems()) {
+            if (itm->getStatus() == OrderItemStatus::PREPARING) {
+                list.push_back(itm);
+            }
+        }
+    }
+    return list;
+}
+
 } // namespace QuickServe

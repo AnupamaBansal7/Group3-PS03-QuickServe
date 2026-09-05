@@ -13,10 +13,18 @@ OrderItem::OrderItem(const std::string& orderItemId,
       startTime_(),
       completionTime_(),
       assignedStationId_(""),
+      plannedPrepMinutes_(0.0),
       actualPrepMinutes_(0.0),
       slaMinutes_(menuItem.getSlaMinutes()),
       status_(OrderItemStatus::QUEUED),
-      slaStatus_(SlaStatus::PENDING) {}
+      slaStatus_(SlaStatus::PENDING) {
+    // Realistic kitchen prep variance: ~30% of items experience slight kitchen delay & breach SLA
+    static const double varianceMultipliers[] = {0.88, 1.15, 0.92, 1.20, 0.85, 1.12, 0.96, 1.24};
+    static size_t varianceIdx = 0;
+    double factor = varianceMultipliers[varianceIdx % 8];
+    varianceIdx++;
+    plannedPrepMinutes_ = static_cast<double>(menuItem.getSlaMinutes()) * factor;
+}
 
 const std::string& OrderItem::getOrderItemId() const {
     return orderItemId_;
@@ -64,6 +72,14 @@ double OrderItem::getActualPrepMinutes() const {
 
 void OrderItem::setActualPrepMinutes(double minutes) {
     actualPrepMinutes_ = minutes;
+}
+
+double OrderItem::getPlannedPrepMinutes() const {
+    return plannedPrepMinutes_;
+}
+
+void OrderItem::setPlannedPrepMinutes(double minutes) {
+    plannedPrepMinutes_ = minutes;
 }
 
 int OrderItem::getSlaMinutes() const {

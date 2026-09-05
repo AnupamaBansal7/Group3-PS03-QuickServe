@@ -9,6 +9,7 @@ class IClock {
 public:
     virtual ~IClock() = default;
     virtual std::chrono::system_clock::time_point now() const = 0;
+    virtual void advanceMinutes(double /*minutes*/) {}
 };
 
 class SystemClock : public IClock {
@@ -31,7 +32,7 @@ public:
         currentTime_ = t;
     }
 
-    void advanceMinutes(double minutes) {
+    void advanceMinutes(double minutes) override {
         auto durMs = std::chrono::milliseconds(static_cast<long long>(minutes * 60000.0));
         currentTime_ += durMs;
     }

@@ -1,4 +1,5 @@
 #include "services/StationService.h"
+#include "utils/TimeUtils.h"
 
 namespace QuickServe {
 
@@ -114,6 +115,34 @@ CompletionResult StationService::completeStationItem(const std::string& stationI
     result.slaStatus = sla;
 
     return result;
+}
+
+std::vector<CompletionResult> StationService::updateCookingProgress(std::chrono::system_clock::time_point currentTime) {
+    std::vector<CompletionResult> completed;
+    auto fac = facilityRepo_->getActiveFacility();
+    if (!fac) return completed;
+
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (const auto& st : fac->getAllStations()) {
+            if (st->isBusy() && st->getCurrentOrderItem()) {
+                auto item = st->getCurrentOrderItem();
+                double elapsed = TimeUtils::durationMinutes(st->getBusyStartTime(), currentTime);
+                double needed = item->getPlannedPrepMinutes();
+
+                if (elapsed >= needed) {
+                    auto res = completeStationItem(st->getStationId(), needed);
+                    if (res.success) {
+                        completed.push_back(res);
+                        changed = true;
+                        break; // Queue may have assigned a new item to this station; restart loop
+                    }
+                }
+            }
+        }
+    }
+    return completed;
 }
 
 } // namespace QuickServe

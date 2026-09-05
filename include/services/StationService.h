@@ -43,6 +43,8 @@ public:
 
     CompletionResult completeStationItem(const std::string& stationId, double simulatedPrepMinutes = -1.0);
 
+    std::vector<CompletionResult> updateCookingProgress(std::chrono::system_clock::time_point currentTime);
+
 private:
     std::shared_ptr<FacilityRepository> facilityRepo_;
     std::shared_ptr<IClock> clock_;
